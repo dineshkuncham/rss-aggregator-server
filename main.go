@@ -79,6 +79,8 @@ func main() {
 	v1Router.Get("/feed_follows", apiCfg.authMiddleware(apiCfg.handlerGetFeedFollows))
 	v1Router.Delete("/feed_follows/{feedFollowID}", apiCfg.authMiddleware(apiCfg.handlerDeleteFeedFollows))
 
+	v1Router.Get("/posts", apiCfg.authMiddleware(apiCfg.handlerGetPostsForUser))
+
 	router.Mount("/v1", v1Router)
 
 	log.Printf("Server starting on port %v", portString)
