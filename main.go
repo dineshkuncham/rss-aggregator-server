@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/dineshkuncham/rssaggregator/controller"
 	"github.com/dineshkuncham/rssaggregator/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,10 +16,6 @@ import (
 
 	_ "github.com/lib/pq"
 )
-
-type apiConfig struct {
-	DB *database.Queries
-}
 
 func main() {
 
@@ -43,9 +40,7 @@ func main() {
 	}
 
 	queries := database.New(conn)
-	apiCfg := apiConfig{
-		DB: queries,
-	}
+	apiCfg := controller.NewHandlers(queries)
 
 	go startScraping(queries, 10, time.Minute)
 
@@ -68,20 +63,20 @@ func main() {
 
 	v1Router := chi.NewRouter()
 
-	v1Router.Get("/health", handlerReadiness)
-	v1Router.Get("/error", handlerErr)
+	v1Router.Get("/health", controller.HandlerReadiness)
+	v1Router.Get("/error", controller.HandlerErr)
 
-	v1Router.Post("/users", apiCfg.handlerCreateUser)
-	v1Router.Get("/users", apiCfg.authMiddleware(apiCfg.handlerGetUser))
+	v1Router.Post("/users", apiCfg.HandlerCreateUser)
+	v1Router.Get("/users", apiCfg.AuthMiddleware(apiCfg.HandlerGetUser))
 
-	v1Router.Post("/feeds", apiCfg.authMiddleware(apiCfg.handlerCreateFeed))
-	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
+	v1Router.Post("/feeds", apiCfg.AuthMiddleware(apiCfg.HandlerCreateFeed))
+	v1Router.Get("/feeds", apiCfg.HandlerGetFeeds)
 
-	v1Router.Post("/feed_follows", apiCfg.authMiddleware(apiCfg.handlerCreateFeedFollows))
-	v1Router.Get("/feed_follows", apiCfg.authMiddleware(apiCfg.handlerGetFeedFollows))
-	v1Router.Delete("/feed_follows/{feedFollowID}", apiCfg.authMiddleware(apiCfg.handlerDeleteFeedFollows))
+	v1Router.Post("/feed_follows", apiCfg.AuthMiddleware(apiCfg.HandlerCreateFeedFollows))
+	v1Router.Get("/feed_follows", apiCfg.AuthMiddleware(apiCfg.HandlerGetFeedFollows))
+	v1Router.Delete("/feed_follows/{feedFollowID}", apiCfg.AuthMiddleware(apiCfg.HandlerDeleteFeedFollows))
 
-	v1Router.Get("/posts", apiCfg.authMiddleware(apiCfg.handlerGetPostsForUser))
+	v1Router.Get("/posts", apiCfg.AuthMiddleware(apiCfg.HandlerGetPostsForUser))
 
 	router.Mount("/v1", v1Router)
 
